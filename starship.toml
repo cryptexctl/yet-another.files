@@ -1,0 +1,21 @@
+format = """
+$directory[ |](bright-black)$nodejs$cmd_duration
+$character
+"""
+
+[directory]
+style = "blue"
+format = "[$path](blue)"  # Можно заменить на "$path" если хочешь путь, не просто ~
+truncation_length = 1
+truncate_to_repo = false
+
+[nodejs]
+format = " [v$version](green)"
+
+[cmd_duration]
+min_time = 0
+format = " ⚡ [$duration](yellow)"
+
+[character]
+success_symbol = "[»»»](bold green)"
+error_symbol = "[»»»](bold red)"
