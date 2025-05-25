@@ -29,7 +29,7 @@ LDFLAGS_MENU := $(NCURSES_LDFLAGS)
 # Detect language
 SYS_LANG := $(shell if [[ "$(LANG)" == ru* ]]; then echo "RU"; else echo "EN"; fi)
 
-.PHONY: all install_all install_sketchybar menuconfig clean help
+.PHONY: all install_all install_sketchybar menuconfig clean clean_menu_binary clean_backups help
 
 help:
 	@echo "Available targets:"
@@ -37,7 +37,9 @@ help:
 	@echo "  install_all        Install all dotfiles using install.sh."
 	@echo "  install_sketchybar Install only SketchyBar configuration using install.sh."
 	@echo "  menuconfig         Show an interactive ncurses menu to select components."
-	@echo "  clean              Clean compiled files for menuconfig."
+	@echo "  clean              Clean compiled menu binary and all .bak backup files."
+	@echo "  clean_menu_binary  Clean only the compiled ncurses menu binary."
+	@echo "  clean_backups      Clean only .bak backup files from ~/.config."
 	@echo "  help               Show this help message."
 
 all: install_all
@@ -65,12 +67,18 @@ menuconfig: $(MENU_C_BIN)
 	@echo "Launching ncurses menu installer..."
 	@$(MENU_C_BIN) $(SYS_LANG) $(INSTALL_SCRIPT)
 
-clean:
-	@echo "Cleaning compiled menu installer..."
+clean_menu_binary:
+	@echo "Cleaning compiled menu installer binary..."
 	@rm -f $(MENU_C_BIN)
-	@echo "Cleaning backup files..."
+	@echo "Menu binary cleaned."
+
+clean_backups:
+	@echo "Cleaning backup files from ~/.config ..."
 	@find $(HOME)/.config -name "*.bak_*" -print -delete
-	@echo "Done."
+	@echo "Backup files cleaned."
+
+clean: clean_menu_binary clean_backups
+	@echo "All clean targets executed."
 
 # Create .notfordots/menu_installer directory if source file exists
 $(MENU_C_DIR):

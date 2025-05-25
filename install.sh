@@ -5,16 +5,28 @@ CONFIG_DIR_BASE="$HOME/.config"
 BACKUP_SUFFIX=".bak_$(date +%Y%m%d_%H%M%S)"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# --- Language Detection (can be overridden by Makefile) ---
-SYS_LANG="EN" # Default to English
-if [[ -z "$1" || ( "$1" != "install_all_from_make" && "$1" != "install_sketchybar_from_make" && "$1" != "install_kitty_from_make" && "$1" != "install_starship_from_make" && "$1" != "install_fastfetch_from_make" && "$1" != "install_borders_from_make" ) ]]; then
-    # Only run language detection if not called with a specific make target
-    if [[ "$LANG" == ru* ]]; then
-        SYS_LANG="RU"
+# --- Argument Parsing and Mode Detection ---
+ACTION=""
+CALLER_LANG=""
+
+if [[ "$1" == "RU" || "$1" == "EN" ]]; then
+    CALLER_LANG="$1"
+    if [[ -n "$2" ]]; then
+        ACTION="$2" 
+    else
+        ACTION="interactive_with_lang" 
     fi
-elif [[ "$1" == "RU" || "$1" == "EN" ]]; then # Language passed as first arg by C program
-    SYS_LANG="$1"
+else
+    ACTION="$1" 
 fi
+
+if [[ -n "$CALLER_LANG" ]]; then
+    SYS_LANG="$CALLER_LANG"
+elif [[ "$LANG" == ru* ]]; then
+    SYS_LANG="RU"
+else
+    SYS_LANG="EN" # Default to English
+fi 
 
 # --- Text Definitions ---
 get_text() {
@@ -25,8 +37,12 @@ get_text() {
             "MENU_TITLE") echo "Выберите опцию:" ;;
             "OPT_ALL") echo "1. Установить все" ;;
             "OPT_BAR") echo "2. Установить только SketchyBar" ;;
+            "OPT_KITTY") echo "2a. Установить Kitty" ;;
+            "OPT_STARSHIP") echo "2b. Установить Starship" ;;
+            "OPT_FASTFETCH") echo "2c. Установить Fastfetch" ;;
+            "OPT_BORDERS") echo "2d. Установить Borders" ;;
             "OPT_EXIT") echo "3. Выход" ;;
-            "PROMPT") echo "Введите ваш выбор [1-3]: " ;;
+            "PROMPT") echo "Введите ваш выбор: " ;;
             "INVALID_CHOICE") echo "Неверный выбор. Пожалуйста, попробуйте снова." ;;
             "OS_ERROR") echo "Ошибка: Этот скрипт предназначен только для macOS." ;;
             "INSTALLING") echo "Установка" ;;
@@ -38,12 +54,13 @@ get_text() {
             "EXITING") echo "Выход..." ;;
             "ALL_INSTALLED_SUCCESS") echo "Установка всех конфигураций завершена." ;;
             "SKETCHYBAR_INSTALLED_SUCCESS") echo "SketchyBar установлен." ;;
+            "COMPONENT_INSTALLED_SUCCESS") echo "установлен(а)." ;;
             "SKETCHYBAR_NAME") echo "SketchyBar" ;;
             "KITTY_NAME") echo "Kitty" ;;
             "STARSHIP_NAME") echo "Starship" ;;
             "FASTFETCH_NAME") echo "Fastfetch" ;;
             "BORDERS_NAME") echo "Borders" ;;
-            *) echo "RU Text key '$key' not found" >&2; exit 1 ;;
+            *) echo "RU Text key '$key' not found for lang $SYS_LANG" >&2; exit 1 ;;
         esac
     else # English texts
         case "$key" in
@@ -51,8 +68,12 @@ get_text() {
             "MENU_TITLE") echo "Select an option:" ;;
             "OPT_ALL") echo "1. Install All" ;;
             "OPT_BAR") echo "2. Install Only SketchyBar" ;;
+            "OPT_KITTY") echo "2a. Install Kitty" ;;
+            "OPT_STARSHIP") echo "2b. Install Starship" ;;
+            "OPT_FASTFETCH") echo "2c. Install Fastfetch" ;;
+            "OPT_BORDERS") echo "2d. Install Borders" ;;
             "OPT_EXIT") echo "3. Exit" ;;
-            "PROMPT") echo "Enter your choice [1-3]: " ;;
+            "PROMPT") echo "Enter your choice: " ;;
             "INVALID_CHOICE") echo "Invalid choice. Please try again." ;;
             "OS_ERROR") echo "Error: This script is intended for macOS only." ;;
             "INSTALLING") echo "Installing" ;;
@@ -64,12 +85,13 @@ get_text() {
             "EXITING") echo "Exiting..." ;;
             "ALL_INSTALLED_SUCCESS") echo "All configurations installed." ;;
             "SKETCHYBAR_INSTALLED_SUCCESS") echo "SketchyBar installed." ;;
+            "COMPONENT_INSTALLED_SUCCESS") echo "installed." ;;
             "SKETCHYBAR_NAME") echo "SketchyBar" ;;
             "KITTY_NAME") echo "Kitty" ;;
             "STARSHIP_NAME") echo "Starship" ;;
             "FASTFETCH_NAME") echo "Fastfetch" ;;
             "BORDERS_NAME") echo "Borders" ;;
-            *) echo "EN Text key '$key' not found" >&2; exit 1 ;;
+            *) echo "EN Text key '$key' not found for lang $SYS_LANG" >&2; exit 1 ;;
         esac
     fi
 }
@@ -102,7 +124,7 @@ install_config_dir() {
     echo "  $(get_text "INSTALLING") $app_name_msg $(get_text "TO") $dest_path_target_dir"
     mkdir -p "$dest_path_target_dir"
     cp -R "$src_path/." "$dest_path_target_dir/"
-    echo "  $app_name_msg $(get_text "DONE_SUFFIX")"
+    echo "  $app_name_msg $(get_text "COMPONENT_INSTALLED_SUCCESS")"
 }
 
 install_config_file() {
@@ -123,7 +145,7 @@ install_config_file() {
     fi
     echo "  $(get_text "INSTALLING") $app_name_msg $(get_text "TO") $dest_file_full_path"
     cp "$src_path" "$dest_file_full_path"
-    echo "  $app_name_msg $(get_text "DONE_SUFFIX")"
+    echo "  $app_name_msg $(get_text "COMPONENT_INSTALLED_SUCCESS")"
 }
 
 # --- Installation Functions ---
@@ -146,34 +168,35 @@ install_sketchybar() {
 # --- Main Logic ---
 check_os # Exit if not macOS
 
-ACTION="$1"
-
-if [[ -z "$ACTION" || ( "$ACTION" != "install_all_from_make" && "$ACTION" != "install_sketchybar_from_make" && "$ACTION" != "install_kitty_from_make" && "$ACTION" != "install_starship_from_make" && "$ACTION" != "install_fastfetch_from_make" && "$ACTION" != "install_borders_from_make" ) ]]; then
-    # Interactive mode if no specific action from make or C program
-    if [[ "$ACTION" == "RU" || "$ACTION" == "EN" ]]; then # Lang passed by C program but no other action
-      ACTION="interactive" # Fallback to interactive if only lang is passed
-    else 
-      SYS_LANG="EN" # Default lang for direct script run without params
-      if [[ "$LANG" == ru* ]]; then SYS_LANG="RU"; fi
-    fi
-
+FINAL_ACTION=""
+if [[ -z "$ACTION" || "$ACTION" == "interactive_with_lang" ]]; then
     echo -e "$(get_text "WELCOME")\n"
     while true; do
         echo "$(get_text "MENU_TITLE")"
         echo "$(get_text "OPT_ALL")"
         echo "$(get_text "OPT_BAR")"
+        echo "$(get_text "OPT_KITTY")"
+        echo "$(get_text "OPT_STARSHIP")"
+        echo "$(get_text "OPT_FASTFETCH")"
+        echo "$(get_text "OPT_BORDERS")"
         echo "$(get_text "OPT_EXIT")"
         read -r -p "$(get_text "PROMPT")" choice
         case $choice in
-            1) ACTION="install_all"; break ;; 
-            2) ACTION="install_sketchybar"; break ;; 
+            1) FINAL_ACTION="install_all"; break ;; 
+            2) FINAL_ACTION="install_sketchybar"; break ;; 
+            "2a") FINAL_ACTION="install_kitty"; break ;; 
+            "2b") FINAL_ACTION="install_starship"; break ;; 
+            "2c") FINAL_ACTION="install_fastfetch"; break ;; 
+            "2d") FINAL_ACTION="install_borders"; break ;; 
             3) echo -e "\n$(get_text "EXITING")"; exit 0 ;; 
             *) echo -e "\n$(get_text "INVALID_CHOICE")\n" ;; 
         esac
     done
+else
+    FINAL_ACTION="$ACTION"
 fi
 
-case "$ACTION" in
+case "$FINAL_ACTION" in
     "install_all" | "install_all_from_make")
         install_kitty
         install_starship
@@ -186,14 +209,28 @@ case "$ACTION" in
         install_sketchybar
         echo -e "\n$(get_text "SKETCHYBAR_INSTALLED_SUCCESS")"
         ;;
-    "install_kitty_from_make") install_kitty ;; 
-    "install_starship_from_make") install_starship ;; 
-    "install_fastfetch_from_make") install_fastfetch ;; 
-    "install_borders_from_make") install_borders ;; 
-    "interactive") # This case is handled by the loop above, just to prevent unknown action error
-        ;;
-    # No default case needed as interactive mode handles invalid initial args
-    # and specific actions are pre-validated.
+    "install_kitty" | "install_kitty_from_make") 
+        install_kitty 
+        echo -e "\n$(get_text "KITTY_NAME") $(get_text "COMPONENT_INSTALLED_SUCCESS")"
+        ;; 
+    "install_starship" | "install_starship_from_make") 
+        install_starship
+        echo -e "\n$(get_text "STARSHIP_NAME") $(get_text "COMPONENT_INSTALLED_SUCCESS")"
+        ;; 
+    "install_fastfetch" | "install_fastfetch_from_make") 
+        install_fastfetch
+        echo -e "\n$(get_text "FASTFETCH_NAME") $(get_text "COMPONENT_INSTALLED_SUCCESS")"
+        ;; 
+    "install_borders" | "install_borders_from_make") 
+        install_borders
+        echo -e "\n$(get_text "BORDERS_NAME") $(get_text "COMPONENT_INSTALLED_SUCCESS")"
+        ;; 
+    *) 
+      if [[ -n "$FINAL_ACTION" ]]; then 
+        echo "Error: Unknown final action '$FINAL_ACTION'" >&2
+        exit 1
+      fi
+      ;;
 esac
 
 exit 0 
