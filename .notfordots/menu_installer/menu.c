@@ -4,10 +4,9 @@
 #include <locale.h>
 #include <unistd.h>
 
-#define MAX_ITEMS 7 // All, Kitty, Starship, Fastfetch, Borders, SketchyBar, Exit
+#define MAX_ITEMS 7 
 #define MAX_STR_LEN 80
 
-// --- Text Definitions (parallels install.sh get_text) ---
 char texts_ru[MAX_ITEMS+2][MAX_STR_LEN] = {
     "Установщик Дотфайлов Platon", // TITLE
     "Установить все",             // OPT_ALL
@@ -68,10 +67,9 @@ int main(int argc, char *argv[]) {
     if (strcmp(lang_code, "RU") == 0) {
         current_texts = texts_ru;
     } else {
-        current_texts = texts_en; // Default to EN if not RU
+        current_texts = texts_en;
     }
 
-    // Check if install.sh exists and is executable
     if (access(install_script_path, X_OK) == -1) {
         perror("Error checking install.sh");
         fprintf(stderr, "Please ensure '%s' exists and is executable.\n", install_script_path);
@@ -87,8 +85,8 @@ int main(int argc, char *argv[]) {
     initscr();
     clear();
     noecho();
-    cbreak(); // Line buffering disabled, Pass on everything
-    curs_set(0); // Hide cursor
+    cbreak(); 
+    curs_set(0); 
 
     int startx = (COLS - 40) / 2;
     int starty = (LINES - (MAX_ITEMS + 5)) / 2;
@@ -131,7 +129,6 @@ int main(int argc, char *argv[]) {
         if (choice != 0) break;
     }
 
-    // Restore terminal before executing script
     curs_set(1);
     endwin();
     system("clear"); // Clear ncurses interface
@@ -150,7 +147,6 @@ int main(int argc, char *argv[]) {
     }
 
     if (action) {
-        // Pass language to install.sh in case it needs it for direct messages (though mostly handled by C part)
         snprintf(command, sizeof(command), "bash %s %s %s", install_script_path, lang_code, action);
         printf("Executing: %s\n", command);
         int ret = system(command);
