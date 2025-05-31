@@ -8,7 +8,7 @@
 #define MAX_STR_LEN 80
 
 char texts_ru[MAX_ITEMS+2][MAX_STR_LEN] = {
-    "Установщик Дотфайлов Platon", // TITLE
+    "Установщик Дотфайлов", // TITLE
     "Установить все",             // OPT_ALL
     "Установить Kitty",           // OPT_KITTY
     "Установить Starship",        // OPT_STARSHIP
@@ -20,7 +20,7 @@ char texts_ru[MAX_ITEMS+2][MAX_STR_LEN] = {
 };
 
 char texts_en[MAX_ITEMS+2][MAX_STR_LEN] = {
-    "Platon's Dotfiles Installer", // TITLE
+    "Dotfiles Installer", // TITLE
     "Install All",                // OPT_ALL
     "Install Kitty",              // OPT_KITTY
     "Install Starship",           // OPT_STARSHIP
